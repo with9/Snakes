@@ -60,7 +60,7 @@ def Bfs(point_dict,head,food):
             
 WIDTH = 800
 HIGHT = 600
-block_size = (50, 50)
+block_size = (30, 30)
 ROW = int(HIGHT/block_size[0])
 COL = int(WIDTH/block_size[1])
 pygame.init()
@@ -181,18 +181,33 @@ while not Quit:
         ppp=[]
         if head[0]-1>0 and (head[0]-1,head[1]) not in snakes:
             ppp.append((head[0]-1,head[1]))
-        if head[0]+1<COL and (head[0]+1,head[1]) not in snakes:
+        if head[0]+1<COL-1 and (head[0]+1,head[1]) not in snakes:
             ppp.append((head[0]+1,head[1]))
         if head[1]-1>0 and (head[0],head[1]-1) not in snakes:
             ppp.append((head[0],head[1]-1))
-        if head[1]+1<ROW and (head[0],head[1]+1) not in snakes:
+        if head[1]+1<ROW-1 and (head[0],head[1]+1) not in snakes:
             ppp.append((head[0],head[0]+1))
-        the_way=[random.choice(ppp)]
+        if the_way:
+            the_way=[ppp.pop(0)]
         old_tail=snakes.pop()
         snakes.insert(0,head)
-        head=the_way.pop()
+        if the_way:
+            head=the_way.pop()
+        else:
+            if head[0]-1>=0 and (head[0]-1,head[1]) not in snakes:
+                ppp.append((head[0]-1,head[1]))
+            if head[0]+1<COL and (head[0]+1,head[1]) not in snakes:
+                ppp.append((head[0]+1,head[1]))
+            if head[1]-1>=0 and (head[0],head[1]-1) not in snakes:
+                ppp.append((head[0],head[1]-1))
+            if head[1]+1<ROW and (head[0],head[1]+1) not in snakes:
+                ppp.append((head[0],head[0]+1))
+            the_way=[ppp.pop(0)]
+            head=the_way.pop()
 
-    if tail_track:
+
+    count=0
+    while tail_track:
         point_dict={}        #没走一步重新建立关系字典
         for points in all_points:
             left_point=(points[0]-1,points[1])
@@ -204,11 +219,11 @@ while not Quit:
             random.shuffle(prelist_0) 
             for j in prelist_0:
                 if j in all_points:
-                    if j not in snakes:
+                    if j not in snakes[:-1]:
                         prelist.append(j)
-            if points not in snakes[:-1]:
-                point_dict[points]=prelist
+            point_dict[points]=prelist
         the_search_way=Bfs(point_dict,head,food)
+        count=count+1
         direct=None
         #探路小蛇
         head_virtual=head
@@ -230,16 +245,21 @@ while not Quit:
             random.shuffle(prelist_0) 
             for j in prelist_0:
                 if j in all_points:
-                    if j not in snakes_virtual:
+                    if j not in snakes_virtual[:-1]:
                         prelist.append(j)
-            if points not in snakes_virtual[:-1]:
-                point_dict_virtual[points]=prelist
+            point_dict_virtual[points]=prelist
         if Bfs(point_dict_virtual,head_virtual,snakes_virtual[-1]):
             tail_track=False
             print("迷路的小蛇找到安全的路啦")
-            the_way=the_search_way[:]
+            if the_search_way:
+                the_way=the_search_way[:]
+            else:
+                pass
+
         else:
-            pass
+            the_way=Bfs(point_dict,head,snakes[-1])
+        if count >100:
+            break
     if food[0] == head[0] and food[1] == head[1]:  # 两个个方块重合,吃到食物
         eatten = True
         scores+=1
@@ -256,8 +276,6 @@ while not Quit:
                     break
             if ovet:
                 break
-        all_points_tp =all_points[:]  # 创建临时列表,用于生成食物
-        all_points_tp=list(all_points_tp)
         eatten = False
         point_dict={}        #每次被吃到,重新建立关系字典
         for points in all_points:
@@ -269,10 +287,9 @@ while not Quit:
             prelist_0=[left_point,right_point,up_point,down_point]
             for j in prelist_0:
                 if j in all_points:
-                    if j not in snakes:
+                    if j not in snakes[:-1]:
                         prelist.append(j)
-            if points not in snakes[:-1]:
-                point_dict[points]=prelist
+            point_dict[points]=prelist
         the_way=Bfs(point_dict,head,food)
         direct=None
         snakes.append(old_tail)
@@ -297,8 +314,7 @@ while not Quit:
                 if j in all_points:
                     if j not in snakes_virtual[:-1]:
                         prelist.append(j)
-            if points not in snakes_virtual:
-                point_dict_virtual[points]=prelist
+            point_dict_virtual[points]=prelist
         if Bfs(point_dict_virtual,head_virtual,snakes_virtual[-1]):
             pass #还可以找到尾巴
             tail_track=False
@@ -309,12 +325,12 @@ while not Quit:
 
     # 判断是否被吃掉
     # 判断是否死亡
-    for snake in snakes:
-        pygame.draw.rect(windows,Snake_color , ((snake[0] * block_size[0], snake[1] * block_size[0]), block_size))
-    for snake in snakes:
-        pygame.draw.rect(windows,(124,49,208),((snake[0]*block_size[0]+block_size[0]/4,snake[1]*block_size[0]+block_size[0]/4),(block_size[0]/2,block_size[1]/2)))
-    pygame.draw.rect(windows, Food_color, ((food[0] * block_size[0], food[1] * block_size[0]), block_size))
-    pygame.draw.rect(windows, Head_color, ((head[0] * block_size[0], head[1] * block_size[0]), block_size))  # 蛇头绘制
+    # for snake in snakes:
+    #     pygame.draw.rect(windows,Snake_color , ((snake[0] * block_size[0], snake[1] * block_size[0]), block_size))
+    # for snake in snakes:
+    #     pygame.draw.rect(windows,(124,49,208),((snake[0]*block_size[0]+block_size[0]/4,snake[1]*block_size[0]+block_size[0]/4),(block_size[0]/2,block_size[1]/2)))
+    # pygame.draw.rect(windows, Food_color, ((food[0] * block_size[0], food[1] * block_size[0]), block_size))
+    # pygame.draw.rect(windows, Head_color, ((head[0] * block_size[0], head[1] * block_size[0]), block_size))  # 蛇头绘制
     clock.tick(clocktrick)  # 控制帧率
     pygame.display.flip()  # 渲染,释放控制权
     """ if death:
