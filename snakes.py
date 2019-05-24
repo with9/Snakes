@@ -57,7 +57,23 @@ def Bfs(point_dict,head,food):
             the_way.append(node)
             node=pre_dict[node]
         return the_way
-            
+def create_dict(all_points,head,snakes):
+    point_dict={}
+    for points in all_points:
+        left_point=(points[0]-1,points[1])
+        right_point=(points[0]+1,points[1])
+        up_point=(points[0],points[1]-1)
+        down_point=(points[0],points[1]+1)
+        prelist=[]
+        prelist_0=[left_point,right_point,up_point,down_point]
+        random.shuffle(prelist_0)    
+        for j in prelist_0:
+            if j in all_points:
+                if j not in snakes:
+                    prelist.append(j)
+        if points not in snakes:
+            point_dict[points]=prelist
+    return point_dict
 WIDTH = 800
 HIGHT = 600
 block_size = (30, 30)
@@ -92,21 +108,7 @@ eatten = False  # 标记是否食物被吃掉的变量
 clocktrick=5
 directs=["left","up","down","right"]
 Quit=False
-point_dict={}
-for points in all_points:
-    left_point=(points[0]-1,points[1])
-    right_point=(points[0]+1,points[1])
-    up_point=(points[0],points[1]-1)
-    down_point=(points[0],points[1]+1)
-    prelist=[]
-    prelist_0=[left_point,right_point,up_point,down_point]
-    random.shuffle(prelist_0)    
-    for j in prelist_0:
-        if j in all_points:
-            if j not in snakes:
-                prelist.append(j)
-    if points not in snakes:
-        point_dict[points]=prelist
+point_dict=create_dict(all_points,head,snakes)
 the_way=Bfs(point_dict,head,food)
 the_first_way=the_way[:]
 tail_track=False
@@ -208,20 +210,7 @@ while not Quit:
 
     count=0
     while tail_track:
-        point_dict={}        #没走一步重新建立关系字典
-        for points in all_points:
-            left_point=(points[0]-1,points[1])
-            right_point=(points[0]+1,points[1])
-            up_point=(points[0],points[1]-1)
-            down_point=(points[0],points[1]+1)
-            prelist=[]
-            prelist_0=[left_point,right_point,up_point,down_point]
-            random.shuffle(prelist_0) 
-            for j in prelist_0:
-                if j in all_points:
-                    if j not in snakes[:-1]:
-                        prelist.append(j)
-            point_dict[points]=prelist
+        point_dict=create_dict(all_points,head,snakes)
         the_search_way=Bfs(point_dict,head,food)
         count=count+1
         direct=None
@@ -234,20 +223,7 @@ while not Quit:
                 snakes_virtual.insert(0,head_virtual)
                 head_virtual=way
             #生成virtualpointdict
-        point_dict_virtual={}        #每次被吃到,重新建立关系字典
-        for points in all_points:
-            left_point=(points[0]-1,points[1])
-            right_point=(points[0]+1,points[1])
-            up_point=(points[0],points[1]-1)
-            down_point=(points[0],points[1]+1)
-            prelist=[]
-            prelist_0=[left_point,right_point,up_point,down_point]
-            random.shuffle(prelist_0) 
-            for j in prelist_0:
-                if j in all_points:
-                    if j not in snakes_virtual[:-1]:
-                        prelist.append(j)
-            point_dict_virtual[points]=prelist
+        point_dict_virtual = create_dict(all_points_virtual,head_virtual,snakes_virtual)        #每次被吃到,重新建立关系字典
         if Bfs(point_dict_virtual,head_virtual,snakes_virtual[-1]):
             tail_track=False
             print("迷路的小蛇找到安全的路啦")
@@ -258,7 +234,7 @@ while not Quit:
 
         else:
             the_way=Bfs(point_dict,head,snakes[-1])
-        if count >100:
+        if count >10:
             break
     if food[0] == head[0] and food[1] == head[1]:  # 两个个方块重合,吃到食物
         eatten = True
@@ -277,19 +253,7 @@ while not Quit:
             if ovet:
                 break
         eatten = False
-        point_dict={}        #每次被吃到,重新建立关系字典
-        for points in all_points:
-            left_point=(points[0]-1,points[1])
-            right_point=(points[0]+1,points[1])
-            up_point=(points[0],points[1]-1)
-            down_point=(points[0],points[1]+1)
-            prelist=[]
-            prelist_0=[left_point,right_point,up_point,down_point]
-            for j in prelist_0:
-                if j in all_points:
-                    if j not in snakes[:-1]:
-                        prelist.append(j)
-            point_dict[points]=prelist
+        point_dict=create_dict(all_points,head,snakes)        #每次被吃到,重新建立关系字典
         the_way=Bfs(point_dict,head,food)
         direct=None
         snakes.append(old_tail)
