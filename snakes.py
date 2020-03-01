@@ -3,33 +3,59 @@ import sys
 import random
 import time
 import os
-
-
-class Point():
-    def __init__(self, x=0, y=0):
-        self.x = x  # 行
-        self.y = y  # 列
-
-
-def judge_point(a, b):  # 判断两个point类是否值相等的函数
-    if a.x == b.x and a.y == b.y:
-        return True
-    else:
-        return False
-
-
-# 判断最高分文件是否存在,不存在时创建
-if not os.path.exists("high_score"):
-    with open("high_score", "w")as f:
-        f.write("0\n")
-        f.close()
-with open("high_score", "r")as f:
-    highscore = int(f.readlines()[-1])
-    f.close()
+global COL,ROW
 def find_list_index(ste,list1):
     for i in range(len(list1)):
         if ste==list1[i]:
             return i
+def Bfs(point_dict,head,food):
+    queue=[]
+    if type(head)==list:
+        head=head[0]
+    pre_dict={}
+    queue.append(head)
+    seen=set()
+    seen.add(head)
+    pre_dict[head]=None
+    while(len(queue)>0):
+        vertx=queue.pop(0)
+        try:
+            if point_dict[vertx]:
+                nodes=point_dict[vertx]
+                for node in nodes:
+                    if node not in seen:
+                        queue.append(node)
+                        seen.add(node)
+                        pre_dict[node]=vertx
+        except:
+            print("出现一些小问题")
+    node=food
+    the_way=[]
+    if node not in seen:
+        print("没有安全的路径可以到达,开始漫游")
+        return False
+    else:
+        while node !=None:
+            the_way.append(node)
+            node=pre_dict[node]
+        return the_way
+def create_dict(all_points,snakes):
+    point_dict={}
+    for points in all_points:
+        left_point=(points[0]-1,points[1])
+        right_point=(points[0]+1,points[1])
+        up_point=(points[0],points[1]-1)
+        down_point=(points[0],points[1]+1)
+        prelist=[]
+        prelist_0=[left_point,right_point,up_point,down_point]
+        random.shuffle(prelist_0)    
+        for j in prelist_0:
+            if j in all_points:
+                if j not in snakes[:]:
+                    prelist.append(j)
+        if points not in snakes:
+            point_dict[points]=prelist
+    return point_dict
 def safe(direct,head,snakes,COL,ROW):#判断目前方向会不会造成死亡,并返回方向字符串..
     if direct=="left":
         flags=[0,0,0]
@@ -40,15 +66,15 @@ def safe(direct,head,snakes,COL,ROW):#判断目前方向会不会造成死亡,�
         #2  代表down有危险,方向向up
         #3  代表都有危险,这时候看蛇那边是更列表更长
         for snake in snakes:
-            if (snake.y==head.y and snake.x+1==head.x) or head.x==0:
+            if (snake[1]==head[1] and snake[0]+1==head[0]) or head[0]==0:
                 flags[0]=1
                 for snake_two in snakes:
-                    if (snake_two.x==head.x and snake_two.y<=head.y):
+                    if (snake_two[0]==head[0] and snake_two[1]<=head[1]):
                         flags[1]=1
                         snake_distance[0]=find_list_index(snake_two,snakes)
                         break
                 for snake_two in snakes:
-                    if snake_two.x==head.x and snake_two.y>head.y:
+                    if snake_two[0]==head[0] and snake_two[1]>head[1]:
                         flags[2]=1
                         snake_distance[1] = find_list_index(snake_two, snakes)
                         break
@@ -75,15 +101,15 @@ def safe(direct,head,snakes,COL,ROW):#判断目前方向会不会造成死亡,�
         #2 right危险.方向left
         #3 都危险,方向看蛇尾巴
         for snake in snakes:
-            if (snake.x==head.x and snake.y+1==head.y) or head.y==0:
+            if (snake[0]==head[0] and snake[1]+1==head[1]) or head[1]==0:
                 flags[0]=1
                 for snake_two in snakes:
-                    if snake_two.y==head.y and snake_two.x<=head.x:
+                    if snake_two[1]==head[1] and snake_two[0]<=head[0]:
                         flags[1]=1
                         snake_distance[0]=find_list_index(snake_two,snakes)
                         break
                 for snake_two in snakes:
-                    if snake_two.y==head.y and snake_two.x>head.x:
+                    if snake_two[1]==head[1] and snake_two[0]>head[0]:
                         flags[2]=1
                         snake_distance[1] = find_list_index(snake_two, snakes)
                         break
@@ -116,15 +142,15 @@ def safe(direct,head,snakes,COL,ROW):#判断目前方向会不会造成死亡,�
         # 2  代表down有危险,方向向up
         # 3  代表都有危险,这时候看蛇尾巴在什么地方
         for snake in snakes:
-            if (snake.y == head.y and snake.x - 1 == head.x) or head.x >= COL-1:
+            if (snake[1] == head[1] and snake[0] - 1 == head[0]) or head[0] >= COL-1:
                 flags[0] = 1
                 for snake_two in snakes:
-                    if (snake_two.x == head.x and snake_two.y <= head.y):
+                    if (snake_two[0]== head[0] and snake_two[1] <= head[1]):
                         flags[1] = 1
                         snake_distance[0]=find_list_index(snake_two,snakes)
                         break
                 for snake_two in snakes:
-                    if snake_two.x == head.x and snake_two.y > head.y:
+                    if snake_two[0]== head[0] and snake_two[1] > head[1]:
                         flags[2] = 1
                         snake_distance[1] = find_list_index(snake_two, snakes)
                         break
@@ -151,15 +177,15 @@ def safe(direct,head,snakes,COL,ROW):#判断目前方向会不会造成死亡,�
         # 2 right危险.方向left
         # 3 都危险,方向看蛇尾巴
         for snake in snakes:
-            if (snake.x == head.x and snake.y - 1 == head.y) or head.y >=ROW-1:
+            if (snake[0] == head[0] and snake[1] - 1 == head[1]) or head[1] >=ROW-1:
                 flags[0] = 1
                 for snake_two in snakes:
-                    if snake_two.y == head.y and snake_two.x <= head.x:
+                    if snake_two[1] == head[1] and snake_two[0]<= head[0]:
                         flags[1] = 1
                         snake_distance[0]=find_list_index(snake_two,snakes)
                         break
                 for snake_two in snakes:
-                    if snake_two.y == head.y and snake_two.x > head.x:
+                    if snake_two[1] == head[1] and snake_two[0]> head[0]:
                         flags[2] = 1
                         snake_distance[1] = find_list_index(snake_two, snakes)
                         break
@@ -178,62 +204,67 @@ def safe(direct,head,snakes,COL,ROW):#判断目前方向会不会造成死亡,�
             if flags[2] == 1:
                 direct = "left"
         return direct
+<<<<<<< HEAD
 pygame.init()
 pygame.mixer.init()  # 声音初始化
 pygame.time.delay(1000)
 pygame.mixer.music.load("bgm.wav")
 pygame.mixer.music.play(-1,0)
+=======
+>>>>>>> master
 WIDTH = 800
 HIGHT = 600
-ROW = 30
-COL = 40
-scores = 0
-all_points = []
+block_size = (30, 30)
+ROW = int(HIGHT/block_size[0])
+COL = int(WIDTH/block_size[1])
+pygame.init()
+all_points=[]
 for i in range(ROW):
     for j in range(COL):
-        all_points.append(Point(j, i))
-block_size = (20, 20)
-BG_color = (255, 255, 255)  # 设置背景颜色,白色
+        all_points.append((j, i))
+all_points_virtual=all_points[:]
+all_points=tuple(all_points)
+Bg_color = (255, 255, 255)  # 设置背景颜色,白色
 Head_color = (0, 0, 0)  # 设置蛇头颜色,黑色
+Snake_color=(125,125,125)
+Line_color=(215,0,95)
 Food_color = (0, 125, 0)
+Way_color=(47,134,210)
 screen_size = (WIDTH, HIGHT)
-head = Point(int(COL / 2), int(ROW / 2))  # 蛇头初始位置,正中间
-food = Point(head.x - 10, head.y)
-snakes = [Point(head.x + 1, head.y), Point(head.x + 2, head.y), Point(head.x + 3, head.y),
-          Point(head.x + 3, head.y + 1)]
+head = (int(COL / 2), int(ROW / 2))  # 蛇头初始位置,正中间
+food = (head[0] - int(COL/4), head[1])
+snakes = [(head[0] + 1, head[1]), (head[0] + 2, head[1]), (head[0] + 3, head[1]),
+          (head[0] + 3, head[1] + 1)]
 windows = pygame.display.set_mode(screen_size)
 pygame.display.set_caption("贪吃蛇尝试")
 # 标题显示
-font = pygame.font.SysFont("Times", 25)
-str123 = "Welcome To SimpleSnake" + "\n" + "Press ESC To Quit"
-title_surface = font.render(str123, True, (0, 0, 0))
-scores_title = font.render("YouScore:", True, (0, 0, 0))
-high_scores_title = font.render("HighScore:", True, (0, 0, 0))
-# 分数显示
-scores_surface = font.render(str(scores), True, (0, 0, 0))
-Quit = False
 clock = pygame.time.Clock()  # 生成时钟的对象
 direct = None
+scores=0
 death = False
 eatten = False  # 标记是否食物被吃掉的变量
-clocktrick=10
-directs=["left","up","down","right"]
+clocktrick=5
+Quit=False
+point_dict=create_dict(all_points,snakes)
+the_way=Bfs(point_dict,head,food)
+the_first_way=the_way[:]
+tail_track=False
 while not Quit:
-    # print(highscore)
-    pygame.Surface.fill(windows, BG_color)
-    windows.blit(title_surface, (20, 23))  # 标题显示
-    scores_surface = font.render(str(scores), True, (0, 0, 0))
-    high_scores_surface = font.render(str(highscore), True, (0, 0, 0))
+    pygame.Surface.fill(windows, Bg_color)
+    for j in range(ROW+1):
+        pygame.draw.line(windows,Line_color,(0,j*block_size[0]),(COL*block_size[0],j*block_size[0]))
+    for j in range(COL+1):
+        pygame.draw.line(windows,Line_color,(j*block_size[0],0),(j*block_size[0],COL*block_size[0]))
     for snake in snakes:
-        pygame.draw.rect(windows, (125, 125, 125), ((snake.x * 20, snake.y * 20), block_size))
-    pygame.draw.rect(windows, Food_color, ((food.x * 20, food.y * 20), block_size))
-    pygame.draw.rect(windows, Head_color, ((head.x * 20, head.y * 20), block_size))  # 蛇头绘制
-    windows.blit(scores_surface, (712, 26))  # 分数显示
-    windows.blit(scores_title, (578, 26))
-    windows.blit(high_scores_surface, (712, 52))
-    windows.blit(high_scores_title, (578, 52))
-    if food.x == head.x and food.y == head.y:  # 两个个方块重合,吃到食物
-        eatten = True
+        pygame.draw.rect(windows,Snake_color , ((snake[0] * block_size[0], snake[1] * block_size[0]), block_size))
+    for snake in snakes:
+        pygame.draw.rect(windows,(124,49,208),((snake[0]*block_size[0]+block_size[0]/4,snake[1]*block_size[0]+block_size[0]/4),(block_size[0]/2,block_size[1]/2)))
+    pygame.draw.rect(windows, Food_color, ((food[0] * block_size[0], food[1] * block_size[0]), block_size))
+    pygame.draw.rect(windows, Head_color, ((head[0] * block_size[0], head[1] * block_size[0]), block_size))  # 蛇头绘制
+    if the_way:
+        for way in the_way:
+                if type(way)!=bool:
+                    pygame.draw.rect(windows,Way_color,((way[0]*block_size[0]+block_size[0]/4,way[1]*block_size[0]+block_size[0]/4),(block_size[0]/2,block_size[1]/2)))
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             Quit = True
@@ -242,18 +273,6 @@ while not Quit:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 pygame.quit()
-            if event.key == 273 and direct != "down":
-                direct = "up"
-                break
-            if event.key == 274 and direct != "up":
-                direct = "down"
-                break
-            if event.key == 276 and direct != "right":
-                direct = "left"
-                break
-            if event.key == 275 and direct != "left":
-                direct = "right"
-                break
             ##控制速度
             if event.key==91 :
                 clocktrick=clocktrick*0.9
@@ -263,154 +282,181 @@ while not Quit:
                 break
             if event.key==8:
                 clocktrick=10
-    direct1 = direct
-    #简单追踪食物#目前处于安全情况下,追击食物
-    #判断危险情况
-
-    if head.x>food.x and direct!='right':
-        direct = "left"
-        for snake in snakes:
-            if snake.y==head.y and (snake.x+2>=head.x and snake.x<head.x):
-                direct=direct1
-                break
-    elif head.x<food.x and direct!='left':
-        direct="right"
-        for snake in snakes:
-            if snake.y==head.y and (snake.x-2<=head.x and snake.x>head.x):
-                direct=direct1
-                break
-    else:
-        if head.y>food.y and direct!='down':
-            direct="up"
-            for snake in snakes:
-                if snake.x==head.x and snake.y+2<=head.y and snake.y<head.y:
-                    direct=direct1
-        elif head.y<food.y and direct!='up':
-            direct="down"
-            for snake in snakes:
-                if snake.x==head.x and snake.y-2<=head.y and snake.y>head.y:
-                    direct=direct1
-        else:
-            pass
-    direct=safe(direct,head,snakes,COL,ROW)
-    direct = safe(direct, head, snakes, COL, ROW)
-    if direct=="left":
-        for snake in snakes:
-            if snake.x==head.x-1 and snake.y==head.y-1:
-                for snake_two in snakes:
-                    if snake_two.x==head.x-1 and snake_two.y==head.y+1:
-                        for snake_three in snakes:
-                            if snake_three.y==head.y and snake_three.x<head.y:
-                                direct=direct1
-                                break
-
-
-    if direct == "right":
-        for snake in snakes:
-            if snake.x == head.x + 1 and snake.y == head.y - 1:
-                for snake_two in snakes:
-                    if snake_two.x == head.x + 1 and snake_two.y == head.y + 1:
-                        for snake_three in snakes:
-                            if snake_three.y == head.y and snake_three.x > head.y:
-                                direct = direct1
-                                break
-    if direct=="up":
-        for snake in snakes:
-            if snake.y==head.y-1 and snake.x==head.x-1:
-                for snake_two in snakes:
-                    if snake_two.y==head.y-1 and snake_two.x==head.x+1:
-                        for snake_three in snakes:
-                            if snake_three.x == head.x and snake_three.y < head.y:
-                                direct = direct1
-                                break
-    if direct=="down":
-        for snake in snakes:
-            if snake.y==head.y+1 and snake.x==head.x-1:
-                for snake_two in snakes:
-                    if snake_two.y==head.y+1 and snake_two.x==head.x+1:
-                        for snake_three in snakes:
-                            if snake_three.x == head.x and snake_three.y > head.y:
-                                direct = direct1
-                                break
-    direct = safe(direct, head, snakes, COL, ROW)
     # 蛇头移动
-    if direct == "up" :
+    """ if direct == "up" :
         if eatten:
             pass
         else:
             snakes.pop()
-        snakes.insert(0, Point(head.x, head.y))
-        head.y = head.y - 1
+        snakes.insert(0, (head[0], head[1]))
+        head=(head[0] , head[1]-1)
     if direct == "down":
         if eatten:
             pass
         else:
             snakes.pop()
-        snakes.insert(0, Point(head.x, head.y))
-        head.y = head.y + 1
+        snakes.insert(0, (head[0], head[1]))
+        head=(head[0] , head[1]+1)
     if direct == "left" :
         if eatten:
             pass
         else:
             snakes.pop()
-        snakes.insert(0, Point(head.x, head.y))
-        head.x = head.x - 1
+        snakes.insert(0, (head[0], head[1]))
+        head = (head[0] - 1,head[1])
     if direct == "right" :
         if eatten:
             pass
         else:
             snakes.pop()
-        snakes.insert(0, Point(head.x, head.y))
-        head.x = head.x + 1
-    all_points_tp = all_points[:]  # 创建临时列表,用于生成食物
-    if eatten:
+        snakes.insert(0, (head[0], head[1]))
+        head = (head[0] + 1,head[1]) """
+    #根据位置定义蛇的运动方向
+    if the_way:
+        old_tail=snakes.pop()
+        snakes.insert(0,head)
+        head=the_way.pop()
+    # else:
+    #     ppp=[]
+    #     if head[0]-1>0 and (head[0]-1,head[1]) not in snakes:
+    #         ppp.append((head[0]-1,head[1]))
+    #     if head[0]+1<COL-1 and (head[0]+1,head[1]) not in snakes:
+    #         ppp.append((head[0]+1,head[1]))
+    #     if head[1]-1>0 and (head[0],head[1]-1) not in snakes:
+    #         ppp.append((head[0],head[1]-1))
+    #     if head[1]+1<ROW-1 and (head[0],head[1]+1) not in snakes:
+    #         ppp.append((head[0],head[1]+1))
+    #     if ppp:
+    #         old_tail=snakes.pop()
+    #         snakes.insert(0,head)
+    #         head=ppp[0]
+    #     else:
+    #         if head[0]-1>=0 and (head[0]-1,head[1]) not in snakes:
+    #             ppp.append((head[0]-1,head[1]))
+    #         if head[0]+1<=COL-1 and (head[0]+1,head[1]) not in snakes:
+    #             ppp.append((head[0]+1,head[1]))
+    #         if head[1]-1>=0 and (head[0],head[1]-1) not in snakes:
+    #             ppp.append((head[0],head[1]-1))
+    #         if head[1]+1<=ROW-1 and (head[0],head[1]+1) not in snakes:
+    #             ppp.append((head[0],head[1]+1))
+    #         old_tail=snakes.pop()
+    #         snakes.insert(0,head)
+    #         head=ppp[0]
+    else:
+        if head[0]>food[0] and direct!='right':
+            direct = "left"
+        elif head[0]<food[0] and direct!='left':
+            direct="right"
+        else:
+            if head[1]>food[1] and direct!='down':
+                direct="up"
+            elif head[1]<food[1] and direct!='up':
+                direct="down"
+            else:
+                pass
+        direct=safe(direct,head,snakes,COL,ROW)
+        if direct == "up" :
+            old_tail = snakes.pop()
+            snakes.insert(0,head)
+            head=(head[0]-1,head[1])
+        if direct == "down":
+            old_tail = snakes.pop()
+            snakes.insert(0, head)
+            head=(head[0],head[1]+1)
+        if direct == "left" :
+            old_tail = snakes.pop()
+            snakes.insert(0, head)
+            head=(head[0]-1,head[1])
+        if direct == "right" :
+            old_tail = snakes.pop()
+            snakes.insert(0, head)
+            head=(head[0]+1,head[1])
+
+    count=0
+    while tail_track:
+        point_dict=create_dict(all_points,snakes[:-1])
+        the_search_way=Bfs(point_dict,head,food)
+        count=count+1
+        #探路小蛇
+        head_virtual=head
+        snakes_virtual=snakes[:]
+        if the_search_way:
+            for way in the_search_way[::-1]:
+                snakes_virtual.pop()
+                snakes_virtual.insert(0,head_virtual)
+                head_virtual=way
+            #生成virtualpointdict
+        point_dict_virtual = create_dict(all_points,snakes_virtual[:-1])        #每次被吃到,重新建立关系字典
+        if Bfs(point_dict_virtual,food,snakes_virtual[-1]):
+            tail_track=False
+            print("迷路的小蛇找到安全的路啦")
+            if the_search_way:
+                the_way=the_search_way[:]
+            else:
+                pass
+
+        else:
+            pass
+        if count >2:
+            break
+    if food[0] == head[0] and food[1] == head[1]:  # 两个个方块重合,吃到食物
+        eatten = True
+        scores+=1
+        all_points_tp =all_points[:]  # 创建临时列表,用于生成食物
+        all_points_tp=list(all_points_tp)
         while True:
-            ovet = True
-            food = random.choice(all_points_tp)
-            if scores <= 200:  # 分数不是过高时,食物不生成在角落
-                if food.x >= 2 and food.x <= COL - 2 and food.y >= 2 and food.y <= ROW - 2:
-                    pass
-                else:
-                    ovet = False
+            ovet=True
+            food=random.choice(all_points_tp)
             for snake in snakes + [head]:
-                if judge_point(food, snake):
+                if food==snake:
                     all_points_tp.remove(food)
                     ovet = False
+                    print("食物生成重复")
                     break
             if ovet:
                 break
         eatten = False
-        scores = scores + 1
+        snakes.append(old_tail)
+        point_dict=create_dict(all_points,snakes[:-1])        #每次被吃到,重新建立关系字典
+        the_way=Bfs(point_dict,head,food)
+        head_virtual=head
+        snakes_virtual=snakes[:]
+        if the_way:
+            for way in the_way[::-1]:
+                snakes_virtual.pop()
+                snakes_virtual.insert(0,head_virtual)
+                head_virtual=way
+            head_virtual=food
+            point_dict_virtual=create_dict(all_points,snakes_virtual[:-1])
+            the_way_to_tail=Bfs(point_dict_virtual,head_virtual,snakes_virtual[-1])
+            if the_way_to_tail:
+                pass
+            else:
+                tail_track=True
+                the_way=None
+                # if len(snakes)>14:
+                #     the_way=Bfs(point_dict,head,snakes[-1])
+        # the_way_to_tail=Bfs()
+
 
     # 判断是否被吃掉
     # 判断是否死亡
-    if head.x < 0 or head.x >= COL or head.y < 0 or head.y >= ROW:
-        death = True
-    for snake in snakes:
-        if judge_point(head, snake):
-            death = True
-            break
-
+    # for snake in snakes:
+    #     pygame.draw.rect(windows,Snake_color , ((snake[0] * block_size[0], snake[1] * block_size[0]), block_size))
+    # for snake in snakes:
+    #     pygame.draw.rect(windows,(124,49,208),((snake[0]*block_size[0]+block_size[0]/4,snake[1]*block_size[0]+block_size[0]/4),(block_size[0]/2,block_size[1]/2)))
+    # pygame.draw.rect(windows, Food_color, ((food[0] * block_size[0], food[1] * block_size[0]), block_size))
+    # pygame.draw.rect(windows, Head_color, ((head[0] * block_size[0], head[1] * block_size[0]), block_size))  # 蛇头绘制
     clock.tick(clocktrick)  # 控制帧率
     pygame.display.flip()  # 渲染,释放控制权
-    if death:
-        print("aswl",end="\t")
-        print(direct,direct1)
-        with open("robot_list","a")as f:
-            f.write(str(scores))
-            f.write('\n')
-            f.close()
-        if scores > highscore:
-            highscore = scores
-            with open("high_score", "a")as f:
-                f.write(str(scores))
-                f.write('\n')
-                f.close()
-        scores = 0
-        head = Point(int(COL / 2), int(ROW / 2))  # 蛇头初始位置,正中间
-        food = Point(head.x - 10, head.y)
-        snakes = [Point(head.x + 1, head.y), Point(head.x + 2, head.y), Point(head.x + 3, head.y),
-                  Point(head.x + 3, head.y + 1)]
+    """ if death:
+        head = (int(COL / 2), int(ROW / 2))  # 蛇头初始位置,正中间
+        food = (head[0]-int(COL/4), head[1])
+        snakes = [(head[0] + 1, head[1]), (head[0] + 2, head[1]), (head[0] + 3, head[1]),
+                  (head[0] + 3, head[1] + 1)]      
         death = False
         direct = None
-        # time.sleep(3)
+        print(scores)
+        scores=0
+        the_way=the_first_way[:]
+        # time.sleep(3) """
