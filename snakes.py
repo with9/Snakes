@@ -181,8 +181,8 @@ def safe(direct,head,snakes,COL,ROW):#判断目前方向会不会造成死亡,�
 pygame.init()
 pygame.mixer.init()  # 声音初始化
 pygame.time.delay(1000)
-#soundbgm=pygame.mixer.Sound("2.wav")
-#soundbgm.play()
+pygame.mixer.music.load("bgm.wav")
+pygame.mixer.music.play(-1,0)
 WIDTH = 800
 HIGHT = 600
 ROW = 30
